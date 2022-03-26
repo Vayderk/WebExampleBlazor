@@ -1,32 +1,32 @@
-name: DeployToGitHubPages
-env:
-  PUBLISH_DIR: bin/Release/netstandard2.1/publish/wwwroot
+name: Deploy to GitHub Pages
 
-# Controls when the action will run
+# Run workflow on every push to the master branch
 on:
   push:
     branches: [ master ]
-
+    
 jobs:
-  build:
+  deploy-to-github-pages:
+    # use ubuntu-latest image to run steps on
     runs-on: ubuntu-latest
     steps:
+    
+    # uses GitHub's checkout action to checkout code form the master branch
     - uses: actions/checkout@v2
-
-    - name: Publish app
-      run: dotnet publish -c Release
-
-    - name: Rewrite base href
-      uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+    
+    # sets up .NET Core SDK 3.1
+    - name: Setup .NET Core SDK
+      uses: actions/setup-dotnet@v1
       with:
-        html_path: ${{ env.PUBLISH_DIR }}/index.html
-        base_href: /BlazorOnGitHubPages/
-
-    - name: GitHub Pages
-      if: success()
-      uses: crazy-max/ghaction-github-pages@v1.5.1
+        dotnet-version: 3.1
+        
+    # publishes Blazor project to the release-folder
+    - name: Publish .NET Core Project
+      run: dotnet publish BlazorOnGitHubPages.csproj -c Release -o release --nologo
+      
+    - name: Commit wwwroot to GitHub Pages
+      uses: Vayderk/github-pages-deploy-action@3.7.1
       with:
-        target_branch: gh-pages
-        build_dir: ${{ env.PUBLISH_DIR }}
-      env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: main
+        FOLDER: release/wwwroot
